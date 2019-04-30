@@ -3,7 +3,10 @@
 /* globals used for audio record/playback */
 extern volatile int record, play, buffer_index;
 extern volatile int left_buffer[];
-extern volatile int right_buffer[];
+extern volatile int right_buffer[];n 
+
+
+asdas
 
 /***************************************************************************************
  * Pushbutton - Interrupt Service Routine                                
