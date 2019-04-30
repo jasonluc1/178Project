@@ -10,7 +10,7 @@ extern volatile int buffer_index;
 void pushbutton_ISR( void )
 {
 	volatile int * KEY_ptr = (int *) 0x10000050;
-	volatile int * audio_ptr = (int *) 0x10003040;	// audio port address
+	volatile int * PS2_ptr = (int *) 0x10000100;			// PS/2 port address
 	
 	int KEY_value;
 
@@ -19,21 +19,15 @@ void pushbutton_ISR( void )
 
 	if (KEY_value == 0x2)					// check KEY1
 	{
-		// reset the buffer index for recording
-		buffer_index = 0;
-		// clear audio-in FIFO
-		*(audio_ptr) = 0x4;
-		// turn off clear, and enable audio-in interrupts
-		*(audio_ptr) = 0x1;
+		*(PS2_ptr + 1) = 0x1; 			/* write to the PS/2 Control register to enable interrupts */
 	}
 	else if (KEY_value == 0x4)				// check KEY2
 	{
-		// reset counter to start playback
-		buffer_index = 0;
-		// clear audio-out FIFO
-		*(audio_ptr) = 0x8;
-		// turn off clear, and enable audio-out interrupts
-		*(audio_ptr) = 0x2;
+		*(PS2_ptr + 1) = 0;			/*write to the PS/2 controlregister to disable interrupts */
 	}
+	//else if (KEY_value == 0x8)		//checks if KEY[3] is press
+	//{
+		/*add another function to when the KEY[3] is press*/
+	//}
 	return;
 }
