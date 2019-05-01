@@ -1,4 +1,3 @@
-extern volatile char byte1, byte2, byte3;
 
 /***************************************************************************************
  * Pushbutton - Interrupt Service Routine                                
@@ -11,18 +10,37 @@ void PS2_ISR( void )
 {
   	volatile int * PS2_ptr = (int *) 0x10000100;		// PS/2 port address
 	int PS2_data, RAVAIL;
+	char byte_data;
 
 	PS2_data = *(PS2_ptr);									// read the Data register in the PS/2 port
 	RAVAIL = (PS2_data & 0xFFFF0000) >> 16;			// extract the RAVAIL field
 	if (RAVAIL > 0)
 	{
-		/* always save the last three bytes received */
-		byte1 = byte2;
-		byte2 = byte3;
-		byte3 = PS2_data & 0xFF;
+		byte_data = PS2_data & 0xFF; /*gets data and stores it onto byte_data*/
+		
 		if ( (byte2 == (char) 0xAA) && (byte3 == (char) 0x00) )
 			// mouse inserted; initialize sending of data
 			*(PS2_ptr) = 0xF4;
 	}
 	return;
+}
+
+
+
+/****************************************************************************************
+ * Subroutine to send a string of text to the VGA monitor 
+****************************************************************************************/
+void VGA_text(int x, int y, char * text_ptr)
+{
+	int offset;
+  	volatile char * character_buffer = (char *) 0x09000000;	// VGA character buffer
+
+	/* assume that the text string fits on one line */
+	offset = (y << 7) + x;
+	while ( *(text_ptr) )
+	{
+		*(character_buffer + offset) = *(text_ptr);	// write to the character buffer
+		++text_ptr;
+		++offset;
+	}
 }

@@ -2,14 +2,10 @@
 
 /* these globals are written by interrupt service routines; we have to declare 
  * these as volatile to avoid the compiler caching their values in registers */
-extern volatile char byte1, byte2, byte3;			/* modified by PS/2 interrupt service routine */
-extern volatile int record, play, buffer_index;	// used for audio
-extern volatile int timeout;							// used to synchronize with the timer
+// extern volatile char byte1, byte2, byte3;			/* modified by PS/2 interrupt service routine */
+// extern volatile int timeout;							// used to synchronize with the timer
 
 /* function prototypes */
-void LCD_cursor( int, int );
-void LCD_text( char * );
-void LCD_cursor_off( void );
 void VGA_text (int, int, char *);
 void VGA_box (int, int, int, int, short);
 void HEX_PS2(char, char, char);
@@ -41,12 +37,10 @@ int main(void)
 	   instead of regular memory loads and stores) */
 	volatile int * interval_timer_ptr = (int *) 0x10002000;	// interal timer base address
 	volatile int * KEY_ptr = (int *) 0x10000050;					// pushbutton KEY address
-	volatile int * audio_ptr = (int *) 0x10003040;				// audio port address
 	volatile int * PS2_ptr = (int *) 0x10000100;					// PS/2 port address
 
 	/* initialize some variables */
-	byte1 = 0; byte2 = 0; byte3 = 0; 			// used to hold PS/2 data
-	record = 0; play = 0; buffer_index = 0;	// used for audio record/playback
+//	byte1 = 0; byte2 = 0; byte3 = 0; 			// used to hold PS/2 data
 	timeout = 0;										// synchronize with the timer
 
 	/* these variables are used for a blue box and a "bouncing" ALTERA on the VGA screen */
@@ -61,14 +55,14 @@ int main(void)
 	*(interval_timer_ptr + 0x2) = (counter & 0xFFFF);
 	*(interval_timer_ptr + 0x3) = (counter >> 16) & 0xFFFF;
 
-	/* start interval timer, enable its interrupts */
+	/* start interval timer, enable its interruts */
 	*(interval_timer_ptr + 1) = 0x7;	// STOP = 0, START = 1, CONT = 1, ITO = 1 
 	
-	*(KEY_ptr + 2) = 0xE; 			/* write to the pushbutton interrupt mask register, and
+	*(KEY_ptr + 2) = 0xF; 			/* write to the pushbutton interrupt mask register, and
 											 * set 3 mask bits to 1 (bit 0 is Nios II reset) */
 
-	*(PS2_ptr) = 0xFF;				/* reset */
-	*(PS2_ptr + 1) = 0x1; 			/* write to the PS/2 Control register to enable interrupts */
+	*(PS2_ptr) = 0xFF;				/* reset clears the data register*/
+
 
 	NIOS2_WRITE_IENABLE( 0xC3 );	/* set interrupt mask bits for levels 0 (interval
 											 * timer), 1 (pushbuttons), 6 (audio), and 7 (PS/2) */
@@ -76,26 +70,26 @@ int main(void)
 	NIOS2_WRITE_STATUS( 1 );		// enable Nios II interrupts
 
 	/* create a messages to be displayed on the VGA and LCD displays */
-	char text_top_LCD[80] = "Welcome to the DE2-115 Media Computer\0";
-	char text_top_VGA[20] = "Altera DE2-115\0";
-	char text_bottom_VGA[20] = "Media Computer\0";
-	char text_ALTERA[10] = "ALTERA\0";
-	char text_erase[10] = "      \0";
+	char text_greet_VGA[20] = "WELCOME!\0";
+	char text_one_VGA[50] = "1) KEY 3 will enable PS/2 to type on the screen\0";
+	char text_two_VGA[30] = "2) KEY 2 will disable PS/2\0";
+//	char text_ALTERA[10] = "ALTERA\0";
+//	char text_erase[10] = "      \0";
 
 	/* output text message to the LCD */
-	LCD_cursor (0,0);										// set LCD cursor location to top row
+	/*LCD_cursor (0,0);										// set LCD cursor location to top row
 	LCD_text (text_top_LCD);
-	LCD_cursor_off ();									// turn off the LCD cursor 
+	LCD_cursor_off ();									// turn off the LCD cursor  */
 
 	/* the following variables give the size of the pixel buffer */
 	screen_x = 319; screen_y = 239;
 	color = 0x1863;		// a dark grey color
 	VGA_box (0, 0, screen_x, screen_y, color);	// fill the screen with grey
 	// draw a medium-blue box around the above text, based on the character buffer coordinates
-	blue_x1 = 28; blue_x2 = 52; blue_y1 = 26; blue_y2 = 34;
+//	blue_x1 = 28; blue_x2 = 52; blue_y1 = 26; blue_y2 = 34;
 	// character coords * 4 since characters are 4 x 4 pixel buffer coords (8 x 8 VGA coords)
-	color = 0x187F;		// a medium blue color
-	VGA_box (blue_x1 * 4, blue_y1 * 4, blue_x2 * 4, blue_y2 * 4, color);
+//	color = 0x187F;		// a medium blue color
+//	VGA_box (blue_x1 * 4, blue_y1 * 4, blue_x2 * 4, blue_y2 * 4, color);
 	/* output text message in the middle of the VGA monitor */
 	VGA_text (blue_x1 + 5, blue_y1 + 3, text_top_VGA);
 	VGA_text (blue_x1 + 5, blue_y1 + 4, text_bottom_VGA);
@@ -139,52 +133,15 @@ int main(void)
 }
 
 /****************************************************************************************
- * Subroutine to move the LCD cursor
-****************************************************************************************/
-void LCD_cursor(int x, int y)
-{
-  	volatile char * LCD_display_ptr = (char *) 0x10003050;	// 16x2 character display
-	char instruction;
-
-	instruction = x;
-	if (y != 0) instruction |= 0x40;				// set bit 6 for bottom row
-	instruction |= 0x80;								// need to set bit 7 to set the cursor location
-	*(LCD_display_ptr) = instruction;			// write to the LCD instruction register
-}
-
-/****************************************************************************************
- * Subroutine to send a string of text to the LCD 
-****************************************************************************************/
-void LCD_text(char * text_ptr)
-{
-  	volatile char * LCD_display_ptr = (char *) 0x10003050;	// 16x2 character display
-
-	while ( *(text_ptr) )
-	{
-		*(LCD_display_ptr + 1) = *(text_ptr);	// write to the LCD data register
-		++text_ptr;
-	}
-}
-
-/****************************************************************************************
- * Subroutine to turn off the LCD cursor
-****************************************************************************************/
-void LCD_cursor_off(void)
-{
-  	volatile char * LCD_display_ptr = (char *) 0x10003050;	// 16x2 character display
-	*(LCD_display_ptr) = 0x0C;											// turn off the LCD cursor
-}
-
-/****************************************************************************************
  * Subroutine to send a string of text to the VGA monitor 
 ****************************************************************************************/
 void VGA_text(int x, int y, char * text_ptr)
 {
-	int offset;
+	int offset = 0;
   	volatile char * character_buffer = (char *) 0x09000000;	// VGA character buffer
 
 	/* assume that the text string fits on one line */
-	offset = (y << 7) + x;
+//	offset = (y << 7) + x;
 	while ( *(text_ptr) )
 	{
 		*(character_buffer + offset) = *(text_ptr);	// write to the character buffer
@@ -213,6 +170,7 @@ void VGA_box(int x1, int y1, int x2, int y2, short pixel_color)
 		}
 	}
 }
+
 
 /****************************************************************************************
  * Subroutine to show a string of HEX data on the HEX displays
@@ -243,3 +201,46 @@ void HEX_PS2(char b1, char b2, char b3)
 	*(HEX3_HEX0_ptr) = *(int *) (hex_segs);
 	*(HEX7_HEX4_ptr) = *(int *) (hex_segs+4);
 }
+
+
+
+/****************************************************************************************
+ * Subroutine to move the LCD cursor
+****************************************************************************************/
+/*void LCD_cursor(int x, int y)
+{
+  	volatile char * LCD_display_ptr = (char *) 0x10003050;	// 16x2 character display
+	char instruction;
+
+	instruction = x;
+	if (y != 0) instruction |= 0x40;				// set bit 6 for bottom row
+	instruction |= 0x80;								// need to set bit 7 to set the cursor location
+	*(LCD_display_ptr) = instruction;			// write to the LCD instruction register
+} */
+
+/****************************************************************************************
+ * Subroutine to send a string of text to the LCD 
+****************************************************************************************/
+/*void LCD_text(char * text_ptr)
+{
+  	volatile char * LCD_display_ptr = (char *) 0x10003050;	// 16x2 character display
+
+	while ( *(text_ptr) )
+	{
+		*(LCD_display_ptr + 1) = *(text_ptr);	// write to the LCD data register
+		++text_ptr;
+	}
+}*/
+
+/****************************************************************************************
+ * Subroutine to turn off the LCD cursor
+****************************************************************************************/
+/*void LCD_cursor_off(void)
+{
+  	volatile char * LCD_display_ptr = (char *) 0x10003050;	// 16x2 character display
+	*(LCD_display_ptr) = 0x0C;											// turn off the LCD cursor
+}*/
+
+
+
+
