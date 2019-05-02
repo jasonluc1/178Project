@@ -1,5 +1,7 @@
 #include "nios2_ctrl_reg_macros.h"
 
+volatile int timeout = 1;
+extern volatile int color_change;
 /* function prototypes */
 void VGA_text (int, int, char *);
 void VGA_box (int, int, int, int, short);
@@ -20,7 +22,7 @@ int main(void)
 //	*(PS2_ptr) = 0xFF;				/* reset clears the data register*/
 
 
-	NIOS2_WRITE_IENABLE( 0x83 );	/* set interrupt mask bits for levels 0 (interval
+	NIOS2_WRITE_IENABLE( 0x02 );	/* set interrupt mask bits for levels 0 (interval
 											 * timer), 1 (pushbuttons), and 7 (PS/2) */
 
 	NIOS2_WRITE_STATUS( 1 );		// enable Nios II interrupts
@@ -28,10 +30,9 @@ int main(void)
 	/* create a messages to be displayed on the VGA and LCD displays */
 	char text_greet_VGA[20] = "WELCOME!\0";
 	char text_one_VGA[50] = "1) Press button 3 to type on the screen\0";
-	char text_two_VGA[30] = "2) Press button 2 to reset\0";
-	char text_three_VGA[40] = "3) Press button 1 to have fun\0";
+	char text_two_VGA[40] = "2) Press button 2 to be amazed\0";
+	char text_three_VGA[40] = "3) Press button 1 to reset\0";
 	char text_erase[80] = "                                                                                \0";
-
 
 
 
@@ -53,8 +54,53 @@ int main(void)
 	VGA_text (2, 3, text_two_VGA);
 	VGA_text (2, 4, text_three_VGA);
 
+	int blue_x1 = 28; 
+	int blue_x2 = 52;
+	int blue_y1 = 26; 
+	int blue_y2 = 34;
 
-	while (1);
+	char text_Move_VGA[10] = "178 = fun\0";
+	char text_erase_VGA[10] = "         \0";
+
+	int char_buffer_x = 79;
+	int char_buffer_y = 59;
+
+	int ALT_x1 = 0;
+	int  ALT_x2 = 8; /* 178 = fun = 9 chars */
+	int  ALT_y = 0;
+	int ALT_inc_x = 1; 
+	int ALT_inc_y = 1;
+
+	while (1){
+
+		while(!timeout){
+
+		/* move the ALTERA text around on the VGA screen */
+		VGA_text (ALT_x1, ALT_y, text_erase_VGA);		// erase
+		ALT_x1 += ALT_inc_x; 
+		ALT_x2 += ALT_inc_x; 
+		ALT_y += ALT_inc_y;
+
+		if ( (ALT_y == char_buffer_y) || (ALT_y == 0) )
+			ALT_inc_y = -(ALT_inc_y);
+		if ( (ALT_x2 == char_buffer_x) || (ALT_x1 == 0) )
+			ALT_inc_x = -(ALT_inc_x);
+
+		if ( (ALT_y >= blue_y1 - 1) && (ALT_y <= blue_y2 + 1) )
+		{
+			if ( ((ALT_x1 >= blue_x1 - 1) && (ALT_x1 <= blue_x2 + 1)) ||
+				((ALT_x2 >= blue_x1 - 1) && (ALT_x2 <= blue_x2 + 1)) )
+			{
+				if ( (ALT_y == (blue_y1 - 1)) || (ALT_y == (blue_y2 + 1)) )
+					ALT_inc_y = -(ALT_inc_y);
+				else
+					ALT_inc_x = -(ALT_inc_x);
+			}
+		}
+		VGA_text (ALT_x1, ALT_y, text_Move_VGA);
+		timeout = 1;
+		}
+	};
 }
 
 /****************************************************************************************
