@@ -237,6 +237,5 @@ switch(byte_data){
 		byte_data = 0x13;
         break;
 	default:
-		byte_data = 0x00;
-        break;
+		return;
 }
