@@ -29,7 +29,8 @@ void PS2_ISR( void )
 	if (RAVAIL > 0)
 	{
 		byte_data = PS2_data & 0xFF; /*gets data and stores it onto byte_data*/
-switch(byte_data){
+		
+	switch(byte_data){
 	case 0x1C: //a
 		byte_data = 0x61;
         break;
