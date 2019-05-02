@@ -1,6 +1,7 @@
 
 extern volatile int j;
 void VGA_text2 ( int , int, char *);
+void VGA_box2 (int, int, int , int, short);
 /***************************************************************************************
  * Pushbutton - Interrupt Service Routine                                
  *                                                                          
@@ -12,18 +13,27 @@ void pushbutton_ISR( void )
 {
 	volatile int * KEY_ptr = (int *) 0x10000050;
 	volatile int * PS2_ptr = (int *) 0x10000100;			// PS/2 port address
+		volatile int * interval_timer_ptr = (int *) 0x10002000;	// interal timer base address
 	
 	int KEY_value;
 
 	KEY_value = *(KEY_ptr + 3);			// read the pushbutton interrupt register
 	*(KEY_ptr + 3) = 0; 						// Clear the interrupt
 
+	int screen_x = 639;
+	int screen_y = 479;
+	short color = 0x1863;		// a dark grey color
+
+	char text_erase[80] = "                                                                                \0";
+
 	if (KEY_value == 0x8)					// check KEY3
 	{
 		*(PS2_ptr) = 0x0f;		/*clears the data */ 
+
+		VGA_box2 (0, 0, screen_x, screen_y, color);	// fill the screen with grey
+
 		j = 2;
-		*(PS2_ptr + 1) = 0x1; 			/* write to the PS/2 Control register to enable interrupts */	
-			char text_erase[80] = "                                           \0";
+		*(PS2_ptr + 1) = 0x1; 			/* write to the PS/2 Control register to enable interrupts */
 			for(int i = 0; i < 80; i++){
 			VGA_text2(0, i, text_erase);
 			}
@@ -32,16 +42,18 @@ void pushbutton_ISR( void )
 	{
 		*(PS2_ptr + 1) = 0;			/*write to the PS/2 controlregister to disable interrupts */
 
+		VGA_box2 (0, 0, screen_x, screen_y, color);	// fill the screen with grey
+
+
 		char text_greet_VGA[20] = "WELCOME!\0";
 		char text_one_VGA[50] = "1) Press button 3 to type on the screen\0";
 		char text_two_VGA[30] = "2) Press button 2 to reset\0";
 		char text_three_VGA[40] = "3) Press button 1 to have fun\0";
-		char text_erase[80] = "                                                                                \0";
 
 	/*Clears the screen before outputting the text on screen so char buffer is empty*/
-	for(int i = 0; i <240; i++){
+		for(int i = 0; i <240; i++){
 		VGA_text2(0, i, text_erase);
-	}
+		}
 
 
 	/*output the menu on the screen*/
@@ -51,10 +63,40 @@ void pushbutton_ISR( void )
 		VGA_text2 (2, 4, text_three_VGA);
 
 	}
-	// else if (KEY_value == 0x8)		//checks if KEY[3] is press
-	// {
-	// 	/*add another function to when the KEY[3] is press*/
-	// }
+	else if (KEY_value == 0x2)		//checks if KEY[3] is press
+	{
+		// /* set the interval timer period for scrolling the HEX displays */
+		// int counter = 0x960000;				// 1/(50 MHz) x (0x960000) ~= 200 msec
+		// *(interval_timer_ptr + 0x2) = (counter & 0xFFFF);
+		// *(interval_timer_ptr + 0x3) = (counter >> 16) & 0xFFFF;	
+
+		// /* start interval timer, enable its interrupts */
+		// *(interval_timer_ptr + 1) = 0x7;	// STOP = 0, START = 1, CONT = 1, ITO = 1 
+
+
+		/*Clearing any characters on the screen*/
+		for(int i = 0; i < 80; i++){
+			VGA_text2(0, i, text_erase);
+		}
+
+		// draw a medium-blue box around the above text, based on the character buffer coordinates
+		int blue_x1 = 28; 
+		int blue_x2 = 52; 
+		int blue_y1 = 26; 
+		int blue_y2 = 34;
+	// character coords * 4 since characters are 4 x 4 pixel buffer coords (8 x 8 VGA coords)
+		short color = 0x187F;		// a medium blue color
+		VGA_box2 (blue_x1 * 4, blue_y1 * 4, blue_x2 * 4, blue_y2 * 4, color);
+
+		char text_Project_VGA[80] = "ECE 178 Final Project\0";
+		char text_Names_VGA[20] = "By Alwin & Jason\0";
+
+		VGA_text2 (blue_x1 + 2, blue_y1 + 2, text_Project_VGA );
+		VGA_text2 (blue_x1 + 4, blue_y1 + 5, text_Names_VGA);
+
+
+
+	}
 	return;
 }
 
@@ -78,23 +120,23 @@ void VGA_text2(int x, int y, char * text_ptr)
 	}
 }
 
-// /****************************************************************************************
-//  * Draw a filled rectangle on the VGA monitor 
-// ****************************************************************************************/
-// void VGA_box(int x1, int y1, int x2, int y2, short pixel_color)
-// {
-// 	int offset, row, col;
-//   	volatile short * pixel_buffer = (short *) 0x08000000;	// VGA pixel buffer
+/****************************************************************************************
+ * Draw a filled rectangle on the VGA monitor 
+****************************************************************************************/
+void VGA_box2(int x1, int y1, int x2, int y2, short pixel_color)
+{
+	int offset, row, col;
+  	volatile short * pixel_buffer = (short *) 0x08000000;	// VGA pixel buffer
 
-// 	/* assume that the box coordinates are valid */
-// 	for (row = y1; row <= y2; row++)
-// 	{
-// 		col = x1;
-// 		while (col <= x2)
-// 		{
-// 			offset = (row << 9) + col;
-// 			*(pixel_buffer + offset) = pixel_color;	// compute halfword address, set pixel
-// 			++col;
-// 		}
-// 	}
-// }
+	/* assume that the box coordinates are valid */
+	for (row = y1; row <= y2; row++)
+	{
+		col = x1;
+		while (col <= x2)
+		{
+			offset = (row << 9) + col;
+			*(pixel_buffer + offset) = pixel_color;	// compute halfword address, set pixel
+			++col;
+		}
+	}
+}
