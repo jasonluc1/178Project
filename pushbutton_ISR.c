@@ -35,7 +35,7 @@ void pushbutton_ISR( void )
 		char text_greet_VGA[20] = "WELCOME!\0";
 		char text_one_VGA[50] = "1) Press button 3 to type on the screen\0";
 		char text_two_VGA[30] = "2) Press button 2 to reset\0";
-		char text_three_VGA[40] = "3) Press button 1 to have fun\0"
+		char text_three_VGA[40] = "3) Press button 1 to have fun\0";
 		char text_erase[80] = "                                                                                \0";
 
 	/*Clears the screen before outputting the text on screen so char buffer is empty*/
