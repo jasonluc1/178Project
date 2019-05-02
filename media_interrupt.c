@@ -1,10 +1,18 @@
 #include "nios2_ctrl_reg_macros.h"
 
-volatile int timeout = 1;
-extern volatile int color_change;
-/* function prototypes */
+/*******************
+function prototypes 
+*******************/
 void VGA_text (int, int, char *);
 void VGA_box (int, int, int, int, short);
+
+
+/*******************
+Global declaration
+*******************/
+volatile int timeout = 1;
+extern volatile int color_change;
+
 
 
 int main(void)
@@ -14,12 +22,10 @@ int main(void)
 	   instead of regular memory loads and stores) */
 	volatile int * interval_timer_ptr = (int *) 0x10002000;	// interal timer base address
 	volatile int * KEY_ptr = (int *) 0x10000050;					// pushbutton KEY address
-//	volatile int * PS2_ptr = (int *) 0x10000100;					// PS/2 port address
+
 	
 	*(KEY_ptr + 2) = 0xE; 			/* write to the pushbutton interrupt mask register, and
 											 * set 3 mask bits to 1 (bit 0 is Nios II reset) */
-
-//	*(PS2_ptr) = 0xFF;				/* reset clears the data register*/
 
 
 	NIOS2_WRITE_IENABLE( 0x02 );	/* set interrupt mask bits for levels 0 (interval
@@ -54,6 +60,7 @@ int main(void)
 	VGA_text (2, 3, text_two_VGA);
 	VGA_text (2, 4, text_three_VGA);
 
+	/*enables the bouncing string when key2 is press*/
 	int blue_x1 = 28; 
 	int blue_x2 = 52;
 	int blue_y1 = 26; 
