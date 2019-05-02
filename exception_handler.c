@@ -6,7 +6,7 @@ void interrupt_handler(void);
 void pushbutton_ISR(void);
 void interval_timer_ISR(void);
 void PS2_ISR(void);
-void audio_ISR(void);
+// void audio_ISR(void);
 
 /* The assembly language code below handles CPU reset processing */
 void the_reset (void) __attribute__ ((section (".reset")));
@@ -136,10 +136,6 @@ void interrupt_handler(void)
 	if ( ipending & 0x02)	// pushbutton port is interrupt level 1
 	{
 		pushbutton_ISR( );
-	}
-	if ( ipending & 0x40)	// audio port is interrupt level 6
-	{
-		audio_ISR( );
 	}
 	if ( ipending & 0x80)	// PS/2 port is interrupt level 7
 	{
