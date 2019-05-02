@@ -1,4 +1,6 @@
+#include <stdio.h>
 
+void VGA_t(int, int, char *);
 /***************************************************************************************
  * Pushbutton - Interrupt Service Routine                                
  *                                                                          
@@ -12,15 +14,18 @@ void PS2_ISR( void )
 	int PS2_data, RAVAIL;
 	char byte_data;
 
+
 	PS2_data = *(PS2_ptr);									// read the Data register in the PS/2 port
 	RAVAIL = (PS2_data & 0xFFFF0000) >> 16;			// extract the RAVAIL field
 	if (RAVAIL > 0)
 	{
 		byte_data = PS2_data & 0xFF; /*gets data and stores it onto byte_data*/
-		
-		if ( (byte2 == (char) 0xAA) && (byte3 == (char) 0x00) )
+		VGA_t(2, 1, &byte_data);
+
+		printf(" %d", byte_data);
+		//if ( (byte2 == (char) 0xAA) && (byte3 == (char) 0x00) )
 			// mouse inserted; initialize sending of data
-			*(PS2_ptr) = 0xF4;
+			//*(PS2_ptr) = 0xF4;
 	}
 	return;
 }
@@ -30,7 +35,7 @@ void PS2_ISR( void )
 /****************************************************************************************
  * Subroutine to send a string of text to the VGA monitor 
 ****************************************************************************************/
-void VGA_text(int x, int y, char * text_ptr)
+void VGA_t(int x, int y, char * text_ptr)
 {
 	int offset;
   	volatile char * character_buffer = (char *) 0x09000000;	// VGA character buffer
