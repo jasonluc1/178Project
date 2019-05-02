@@ -13,10 +13,6 @@ int main(void)
 	volatile int * interval_timer_ptr = (int *) 0x10002000;	// interal timer base address
 	volatile int * KEY_ptr = (int *) 0x10000050;					// pushbutton KEY address
 //	volatile int * PS2_ptr = (int *) 0x10000100;					// PS/2 port address
-
-
-	int screen_x; int screen_y; int char_buffer_x; int char_buffer_y;
-	short color;
 	
 	*(KEY_ptr + 2) = 0xE; 			/* write to the pushbutton interrupt mask register, and
 											 * set 3 mask bits to 1 (bit 0 is Nios II reset) */
@@ -24,34 +20,38 @@ int main(void)
 //	*(PS2_ptr) = 0xFF;				/* reset clears the data register*/
 
 
-	NIOS2_WRITE_IENABLE( 0xC3 );	/* set interrupt mask bits for levels 0 (interval
-											 * timer), 1 (pushbuttons), 6 (audio), and 7 (PS/2) */
+	NIOS2_WRITE_IENABLE( 0x83 );	/* set interrupt mask bits for levels 0 (interval
+											 * timer), 1 (pushbuttons), and 7 (PS/2) */
 
 	NIOS2_WRITE_STATUS( 1 );		// enable Nios II interrupts
 
 	/* create a messages to be displayed on the VGA and LCD displays */
-	char text_greet_VGA[20] = "Welcome!!\0";
-	char text_one_VGA[50] = "1) KEY 3 will enable PS/2 to type on the screen\0";
-	char text_two_VGA[30] = "2) KEY 2 will disable PS/2\0";
-	char text_erase[50] = "                                            \0";
+	char text_greet_VGA[20] = "WELCOME!\0";
+	char text_one_VGA[50] = "1) Press button 3 to type on the screen\0";
+	char text_two_VGA[30] = "2) Press button 2 to reset\0";
+	char text_three_VGA[40] = "3) Press button 1 to have fun\0";
+	char text_erase[80] = "                                                                                \0";
+
+
 
 
 	/* the following variables give the size of the pixel buffer */
-	screen_x = 319; screen_y = 239;
-	color = 0x1863;		// a dark grey color
+	int screen_x = 319;
+	int  screen_y = 239;
+	short color = 0x1863;		// a dark grey color
 	VGA_box (0, 0, screen_x, screen_y, color);	// fill the screen with grey
 
-
 	/*Clears the screen before outputting the text on screen so char buffer is empty*/
-	VGA_text(2, 1, text_erase);
-	VGA_text(2, 2, text_erase);
-	VGA_text(2, 3, text_erase);
+	for(int i = 0; i <240; i++){
+		VGA_text(0, i, text_erase);
+	}
 
 
 	/*output the menu on the screen*/
 	VGA_text (2, 1 , text_greet_VGA);
 	VGA_text (2 , 2, text_one_VGA);
 	VGA_text (2, 3, text_two_VGA);
+	VGA_text (2, 4, text_three_VGA);
 
 
 	while (1);
