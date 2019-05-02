@@ -1,3 +1,5 @@
+
+extern volatile int j;
 void VGA_text2 ( int , int, char *);
 /***************************************************************************************
  * Pushbutton - Interrupt Service Routine                                
@@ -18,11 +20,12 @@ void pushbutton_ISR( void )
 
 	if (KEY_value == 0x8)					// check KEY3
 	{
-		*(PS2_ptr) = 0xff;		/*clears the data */ 
+		*(PS2_ptr) = 0x0f;		/*clears the data */ 
+		j = 2;
 		*(PS2_ptr + 1) = 0x1; 			/* write to the PS/2 Control register to enable interrupts */	
-			char text_erase[80] = "                                                \0";
-			for(int i = 0; i < 240; i++){
-			VGA_text2(2, i, text_erase);
+			char text_erase[80] = "                                           \0";
+			for(int i = 0; i < 80; i++){
+			VGA_text2(0, i, text_erase);
 			}
 	}
 	else if (KEY_value == 0x4)				// check KEY2
@@ -30,20 +33,22 @@ void pushbutton_ISR( void )
 		*(PS2_ptr + 1) = 0;			/*write to the PS/2 controlregister to disable interrupts */
 
 		char text_greet_VGA[20] = "WELCOME!\0";
-		char text_one_VGA[50] = "1) KEY 3 will enable PS/2 to type on the screen\0";
-		char text_two_VGA[30] = "2) KEY 2 will disable PS/2\0";
-		char text_erase[50] = "                                        \0";
+		char text_one_VGA[50] = "1) Press button 3 to type on the screen\0";
+		char text_two_VGA[30] = "2) Press button 2 to reset\0";
+		char text_three_VGA[40] = "3) Press button 1 to have fun\0"
+		char text_erase[80] = "                                                                                \0";
 
 	/*Clears the screen before outputting the text on screen so char buffer is empty*/
-		VGA_text2(2, 1, text_erase);
-		VGA_text2(2, 2, text_erase);
-		VGA_text2(2, 3, text_erase);
+	for(int i = 0; i <240; i++){
+		VGA_text2(0, i, text_erase);
+	}
 
 
 	/*output the menu on the screen*/
 		VGA_text2 (2, 1 , text_greet_VGA);
 		VGA_text2 (2 , 2, text_one_VGA);
 		VGA_text2 (2, 3, text_two_VGA);
+		VGA_text2 (2, 4, text_three_VGA);
 
 	}
 	// else if (KEY_value == 0x8)		//checks if KEY[3] is press
