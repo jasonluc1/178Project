@@ -1,32 +1,46 @@
 #include "nios2_ctrl_reg_macros.h"
-extern volatile int j;
-extern volatile int timeout;
+
+
+/*************************************
+Function prototype
+*************************************/
 void VGA_text2 ( int , int, char *);
 void VGA_box2 (int, int, int , int, short);
+
+
+/***********************************
+Global values declared
+**********************************/
+extern volatile int j;
+extern volatile int timeout;
+
 /***************************************************************************************
  * Pushbutton - Interrupt Service Routine                                
  *                                                                          
- * This routine checks which KEY has been pressed. If it is KEY1 or KEY2, it writes this 
- * value to the global variable key_pressed. If it is KEY3 then it loads the SW switch 
- * values and stores in the variable pattern
+ * This routine checks which KEY has been pressed. If key3 is press then use has the ability to use the keyboard to type on the monitor
+ if key 2 is press the use will see a light show and words bouncing on the screen
+ if key 1 is press then the promt on the screen will go back to main menu
 ****************************************************************************************/
 void pushbutton_ISR( void )
 {
-	volatile int * KEY_ptr = (int *) 0x10000050;
+	volatile int * KEY_ptr = (int *) 0x10000050;			// Key port address
 	volatile int * PS2_ptr = (int *) 0x10000100;			// PS/2 port address
-		volatile int * interval_timer_ptr = (int *) 0x10002000;	// interal timer base address
+	volatile int * interval_timer_ptr = (int *) 0x10002000;	// interal timer base address
 	
-	int KEY_value;
+	int KEY_value;						
 
 	KEY_value = *(KEY_ptr + 3);			// read the pushbutton interrupt register
 	*(KEY_ptr + 3) = 0; 						// Clear the interrupt
 
-	int screen_x = 639;
-	int screen_y = 479;
+	int screen_x = 319;
+	int screen_y = 239;
 	short color = 0x1863;		// a dark grey color
 
 	char text_erase[80] = "                                                                                \0";
 
+	/*******************************************
+	Type on the terminal
+	*******************************************/
 	if (KEY_value == 0x8)					// check KEY3
 	{
 		*(PS2_ptr + 1) = 1;			/*write to the PS/2 controlregister to disable interrupts */
@@ -42,6 +56,11 @@ void pushbutton_ISR( void )
 			VGA_text2(0, i, text_erase);
 			}
 	}
+
+	/*******************************************
+	show the light show with bouncing letters
+	*******************************************/
+
 	else if (KEY_value == 0x4)				// check KEY2
 	{
 		NIOS2_WRITE_IENABLE( 0x83 );	/* set interrupt mask bits for levels 0 (interval
@@ -82,6 +101,10 @@ void pushbutton_ISR( void )
 		VGA_text2 (blue_x1 + 4, blue_y1 + 5, text_Names_VGA);
 
 	}
+
+	/*******************************************
+	Reset
+	*******************************************/
 	else if (KEY_value == 0x2)		//checks if KEY[1] is press
 	{
 		timeout = 1;
@@ -98,19 +121,20 @@ void pushbutton_ISR( void )
 		char text_one_VGA[50] = "1) Press button 3 to type on the screen\0";
 		char text_two_VGA[40] = "2) Press button 2 to be amazed\0";
 		char text_three_VGA[40] = "3) Press button 1 to reset\0";
-	/*Clears the screen before outputting the text on screen so char buffer is empty*/
+
+		/*Clears the screen before outputting the text on screen so char buffer is empty*/
 		for(int i = 0; i <240; i++){
 		VGA_text2(0, i, text_erase);
 		}
 
 
-	/*output the menu on the screen*/
+		/*output the menu on the screen*/
 		VGA_text2 (2, 1 , text_greet_VGA);
 		VGA_text2 (2 , 2, text_one_VGA);
 		VGA_text2 (2, 3, text_two_VGA);
 		VGA_text2 (2, 4, text_three_VGA);
 	}
-	else{return;}
+
 	return;
 }
 
