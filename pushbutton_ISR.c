@@ -1,5 +1,6 @@
-
+#include "nios2_ctrl_reg_macros.h"
 extern volatile int j;
+extern volatile int timeout;
 void VGA_text2 ( int , int, char *);
 void VGA_box2 (int, int, int , int, short);
 /***************************************************************************************
@@ -31,6 +32,8 @@ void pushbutton_ISR( void )
 		*(PS2_ptr + 1) = 1;			/*write to the PS/2 controlregister to disable interrupts */
 		*(PS2_ptr) = 0x0f;		/*clears the data */ 
 
+		NIOS2_WRITE_IENABLE( 0x82 );	/* set interrupt mask bits for levels 0 (interval
+											 * timer), 1 (pushbuttons), and 7 (PS/2) */
 		VGA_box2 (0, 0, screen_x, screen_y, color);	// fill the screen with grey
 
 		j = 2;
@@ -41,39 +44,22 @@ void pushbutton_ISR( void )
 	}
 	else if (KEY_value == 0x4)				// check KEY2
 	{
-		*(PS2_ptr + 1) = 0;			/*write to the PS/2 controlregister to disable interrupts */
+		NIOS2_WRITE_IENABLE( 0x83 );	/* set interrupt mask bits for levels 0 (interval
+											 * timer), 1 (pushbuttons), and 7 (PS/2) */
 
-		VGA_box2 (0, 0, screen_x, screen_y, color);	// fill the screen with grey
+		/* set the interval timer period for scrolling the HEX displays */
+		int counter = 0x960000;				// 1/(50 MHz) x (0x960000) ~= 200 msec
+		*(interval_timer_ptr + 0x2) = (counter & 0xFFFF);
+		*(interval_timer_ptr + 0x3) = (counter >> 16) & 0xFFFF;	
 
+		
 
-		char text_greet_VGA[20] = "WELCOME!\0";
-		char text_one_VGA[50] = "1) Press button 3 to type on the screen\0";
-		char text_two_VGA[30] = "2) Press button 2 to reset\0";
-		char text_three_VGA[40] = "3) Press button 1 to have fun\0";
+		/* start interval timer, enable its interrupts */
+		*(interval_timer_ptr + 1) = 0x7;	// STOP = 0, START = 1, CONT = 1, ITO = 1 
 
-	/*Clears the screen before outputting the text on screen so char buffer is empty*/
-		for(int i = 0; i <240; i++){
-		VGA_text2(0, i, text_erase);
-		}
-
-
-	/*output the menu on the screen*/
-		VGA_text2 (2, 1 , text_greet_VGA);
-		VGA_text2 (2 , 2, text_one_VGA);
-		VGA_text2 (2, 3, text_two_VGA);
-		VGA_text2 (2, 4, text_three_VGA);
-
-	}
-	else if (KEY_value == 0x2)		//checks if KEY[3] is press
-	{
-		// /* set the interval timer period for scrolling the HEX displays */
-		// int counter = 0x960000;				// 1/(50 MHz) x (0x960000) ~= 200 msec
-		// *(interval_timer_ptr + 0x2) = (counter & 0xFFFF);
-		// *(interval_timer_ptr + 0x3) = (counter >> 16) & 0xFFFF;	
-
-		// /* start interval timer, enable its interrupts */
-		// *(interval_timer_ptr + 1) = 0x7;	// STOP = 0, START = 1, CONT = 1, ITO = 1 
-
+		int ALT_x1 = 0;
+		int  ALT_x2 = 8; /* 178=fun = 7 chars */
+		int  ALT_y = 0;
 
 		/*Clearing any characters on the screen*/
 		for(int i = 0; i < 80; i++){
@@ -95,9 +81,36 @@ void pushbutton_ISR( void )
 		VGA_text2 (blue_x1 + 2, blue_y1 + 2, text_Project_VGA );
 		VGA_text2 (blue_x1 + 4, blue_y1 + 5, text_Names_VGA);
 
-
-
 	}
+	else if (KEY_value == 0x2)		//checks if KEY[1] is press
+	{
+		timeout = 1;
+		NIOS2_WRITE_IENABLE( 0x02 );	/* set interrupt mask bits for levels 0 (interval
+											 * timer), 1 (pushbuttons), and 7 (PS/2) */
+
+		*(PS2_ptr + 1) = 0;			/*write to the PS/2 controlregister to disable interrupts */
+		*(interval_timer_ptr + 1) = 0xA;	// STOP = 1, START = 0, CONT = 1, ITO = 0
+
+		VGA_box2 (0, 0, screen_x, screen_y, color);	// fill the screen with grey
+
+
+		char text_greet_VGA[20] = "WELCOME!\0";
+		char text_one_VGA[50] = "1) Press button 3 to type on the screen\0";
+		char text_two_VGA[40] = "2) Press button 2 to be amazed\0";
+		char text_three_VGA[40] = "3) Press button 1 to reset\0";
+	/*Clears the screen before outputting the text on screen so char buffer is empty*/
+		for(int i = 0; i <240; i++){
+		VGA_text2(0, i, text_erase);
+		}
+
+
+	/*output the menu on the screen*/
+		VGA_text2 (2, 1 , text_greet_VGA);
+		VGA_text2 (2 , 2, text_one_VGA);
+		VGA_text2 (2, 3, text_two_VGA);
+		VGA_text2 (2, 4, text_three_VGA);
+	}
+	else{return;}
 	return;
 }
 
