@@ -24,11 +24,11 @@ void interval_timer_ISR( )
 	timeout = 0;								// set global variable
 	
 	color_change += 1;							//a counter to access the array of colors
-	short colors[3] = {0x187f, 0xf800,0x07e0};	//and array which hold values of color blue, red, greeen
+	short colors[9] = {0x187f, 0xf800,0x07e0,0x001f, 0x0000, 0xffff, 0xffe0, 0xf81f, 0x07ff};	//and array which hold values of color blue, red, greeen
 
 
 	/*counter which will make sure the counter to access the array never pass 2*/
-	if (color_change > 2) {
+	if (color_change > 9) {
 		color_change = 0;
 	}
 
