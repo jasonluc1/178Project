@@ -28,6 +28,7 @@ void pushbutton_ISR( void )
 
 	if (KEY_value == 0x8)					// check KEY3
 	{
+		*(PS2_ptr + 1) = 1;			/*write to the PS/2 controlregister to disable interrupts */
 		*(PS2_ptr) = 0x0f;		/*clears the data */ 
 
 		VGA_box2 (0, 0, screen_x, screen_y, color);	// fill the screen with grey
