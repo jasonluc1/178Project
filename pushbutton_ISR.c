@@ -12,7 +12,9 @@ void VGA_box2 (int, int, int , int, short);
 Global values declared
 **********************************/
 extern volatile int j;
+extern volatile int m;
 extern volatile int timeout;
+//int fre;
 
 /***************************************************************************************
  * Pushbutton - Interrupt Service Routine                                
@@ -50,7 +52,8 @@ void pushbutton_ISR( void )
 											 * timer), 1 (pushbuttons), and 7 (PS/2) */
 		VGA_box2 (0, 0, screen_x, screen_y, color);	// fill the screen with grey
 
-		j = 2;
+		j = 1;
+		m = 0;
 		*(PS2_ptr + 1) = 0x1; 			/* write to the PS/2 Control register to enable interrupts */
 			for(int i = 0; i < 80; i++){
 			VGA_text2(0, i, text_erase);
@@ -63,7 +66,7 @@ void pushbutton_ISR( void )
 
 	else if (KEY_value == 0x4)				// check KEY2
 	{
-		NIOS2_WRITE_IENABLE( 0x83 );	/* set interrupt mask bits for levels 0 (interval
+		NIOS2_WRITE_IENABLE( 0x03 );	/* set interrupt mask bits for levels 0 (interval
 											 * timer), 1 (pushbuttons), and 7 (PS/2) */
 
 		/* set the interval timer period for scrolling the HEX displays */
@@ -71,7 +74,7 @@ void pushbutton_ISR( void )
 		*(interval_timer_ptr + 0x2) = (counter & 0xFFFF);
 		*(interval_timer_ptr + 0x3) = (counter >> 16) & 0xFFFF;	
 
-		
+		//int fre = 0;
 
 		/* start interval timer, enable its interrupts */
 		*(interval_timer_ptr + 1) = 0x7;	// STOP = 0, START = 1, CONT = 1, ITO = 1 
@@ -127,6 +130,8 @@ void pushbutton_ISR( void )
 		VGA_text2(0, i, text_erase);
 		}
 
+		int m = 0;
+		//int fre = 0;
 
 		/*output the menu on the screen*/
 		VGA_text2 (2, 1 , text_greet_VGA);
