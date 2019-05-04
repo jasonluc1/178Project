@@ -86,8 +86,12 @@ extern volatile int f72;
 extern volatile int f73;
 extern volatile int f74;
 extern volatile int f75;
+extern volatile int f76;
+extern volatile int f77;
 
-//extern volatile int fre;
+extern volatile int fshift;
+// extern volatile int fcaps;
+
 
 int main(void)
 {
@@ -107,10 +111,10 @@ int main(void)
 
 	/* create a messages to be displayed on the VGA and LCD displays */
 	char text_greet_VGA[20] = "WELCOME!\0";
-	char text_one_VGA[50] = "1) Press button 3 to type on the screen\0";
-	char text_two_VGA[40] = "2) Press button 2 to be amazed\0";
-	char text_three_VGA[40] = "3) Press button 1 to reset\0";
-	char text_erase[80] = "                                                                                \0";
+	char text_one_VGA[50] = "1) Press button 3 to type on the screen.\0";
+	char text_two_VGA[40] = "2) Press button 2 to have fun.\0";
+	char text_three_VGA[40] = "3) Press button 1 to reset.\0";
+	char text_erase[100] = "                                                                                \0";
 
 	/* the following variables give the size of the pixel buffer */
 	int screen_x = 319;

@@ -38,7 +38,7 @@ void pushbutton_ISR( void )
 	int screen_y = 239;
 	short color = 0x1863;		// a dark grey color
 
-	char text_erase[80] = "                                                                                \0";
+	char text_erase[100] = "                                                                                \0";
 
 	/*******************************************
 	Type on the terminal
@@ -121,9 +121,9 @@ void pushbutton_ISR( void )
 
 
 		char text_greet_VGA[20] = "WELCOME!\0";
-		char text_one_VGA[50] = "1) Press button 3 to type on the screen\0";
-		char text_two_VGA[40] = "2) Press button 2 to be amazed\0";
-		char text_three_VGA[40] = "3) Press button 1 to reset\0";
+		char text_one_VGA[50] = "1) Press button 3 to type on the screen.\0";
+		char text_two_VGA[40] = "2) Press button 2 to have fun.\0";
+		char text_three_VGA[40] = "3) Press button 1 to reset.\0";
 
 		/*Clears the screen before outputting the text on screen so char buffer is empty*/
 		for(int i = 0; i <240; i++){
